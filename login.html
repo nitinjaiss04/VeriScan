@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Sign In & Sign Up — VeriScan</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <!-- Theme Initializer -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem("veriscan_theme") === "light") {
+                    document.documentElement.classList.add("light-mode");
+                    if (document.body) document.body.classList.add("light-mode");
+                }
+            } catch (e) { }
+        })();
+    </script>
+
+    <style>
+        /* ==========================================================================
+           1. DESIGN SYSTEM VARIABLES
+           ========================================================================== */
+        :root {
+            --primary: #0077ff;
+            --primary-glow: rgba(0, 119, 255, 0.4);
+            --primary-gradient: linear-gradient(135deg, #0066ff 0%, #00d2ff 100%);
+            --accent-cyan: #00f0ff;
+
+            --bg-base: #020b18;
+            --bg-surface: #041226;
+            --bg-card: rgba(6, 20, 42, 0.85);
+            --bg-card-hover: rgba(9, 28, 58, 0.95);
+            --bg-input: #04142b;
+
+            --border-glass: rgba(0, 140, 255, 0.22);
+            --border-glass-hover: rgba(0, 210, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+
+            --safe-green: #00f5a0;
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-accent: #38bdf8;
+
+            --shadow-card: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(0, 140, 255, 0.15);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-pill: 9999px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        :root.light-mode,
+        html.light-mode,
+        body.light-mode {
+            --bg-base: #f0f6fc;
+            --bg-surface: #e2edf8;
+            --bg-card: #ffffff;
+            --bg-card-hover: #ffffff;
+            --bg-input: #ffffff;
+
+            --border-glass: rgba(0, 119, 255, 0.2);
+            --border-glass-hover: rgba(0, 119, 255, 0.45);
+            --border-subtle: rgba(0, 0, 0, 0.08);
+
+            --text-main: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --text-accent: #0284c7;
+
+            --shadow-card: 0 20px 50px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(0, 119, 255, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 15% 15%, rgba(0, 119, 255, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(0, 240, 255, 0.12) 0%, transparent 40%),
+                linear-gradient(180deg, #020b18 0%, #04142a 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            position: relative;
+        }
+
+        html.light-mode body,
+        body.light-mode {
+            background-color: #f0f6fc;
+            background-image:
+                radial-gradient(circle at 15% 15%, rgba(0, 119, 255, 0.07) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(0, 210, 255, 0.07) 0%, transparent 40%),
+                linear-gradient(180deg, #f0f6fc 0%, #e2edf8 100%);
+        }
+
+        .cyber-grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-size: 40px 40px;
+            background-image:
+                linear-gradient(to right, rgba(0, 140, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 140, 255, 0.03) 1px, transparent 1px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Top Bar Navigation */
+        .top-nav {
+            position: fixed;
+            top: 18px;
+            left: 0;
+            right: 0;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: var(--radius-pill);
+            background: rgba(6, 20, 42, 0.6);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(12px);
+            transition: var(--transition);
+        }
+
+        html.light-mode .back-link,
+        body.light-mode .back-link {
+            background: #ffffff;
+            color: #334155;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .back-link:hover {
+            color: #ffffff;
+            border-color: var(--accent-cyan);
+            background: rgba(0, 140, 255, 0.2);
+            transform: translateX(-2px);
+        }
+
+        html.light-mode .back-link:hover,
+        body.light-mode .back-link:hover {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .theme-toggle-btn {
+            background: rgba(6, 20, 42, 0.6);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            transition: var(--transition);
+        }
+
+        html.light-mode .theme-toggle-btn,
+        body.light-mode .theme-toggle-btn {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .theme-toggle-btn:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Card Container */
+        .auth-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 32px 28px;
+            box-shadow: var(--shadow-card);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        /* Brand */
+        .auth-brand {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-logo-img {
+            height: 46px;
+            max-width: 200px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 12px rgba(0, 140, 255, 0.35));
+            margin-bottom: 12px;
+            transition: transform 0.25s ease;
+        }
+
+        .auth-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
+        }
+
+        .auth-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Tab Switcher */
+        .auth-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-pill);
+            padding: 3px;
+            margin-bottom: 20px;
+        }
+
+        html.light-mode .auth-tabs,
+        body.light-mode .auth-tabs {
+            background: #f1f5f9;
+            border-color: rgba(0, 119, 255, 0.15);
+        }
+
+        .auth-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 700;
+            padding: 9px 14px;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+
+        .auth-tab-btn.active {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        /* Social Auth Buttons */
+        .social-auth-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn-provider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1.5px solid var(--border-glass);
+            background: rgba(4, 18, 38, 0.75);
+            color: var(--text-main);
+        }
+
+        html.light-mode .btn-provider,
+        body.light-mode .btn-provider {
+            background: #ffffff;
+            border-color: rgba(0, 119, 255, 0.2);
+            color: #0f172a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .btn-provider:hover {
+            transform: translateY(-1.5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 6px 16px rgba(0, 119, 255, 0.18);
+        }
+
+        .btn-provider.google:hover {
+            border-color: #4285F4;
+            background: rgba(66, 133, 244, 0.1);
+        }
+
+        .btn-provider.phone:hover {
+            border-color: var(--safe-green);
+            background: rgba(0, 245, 160, 0.08);
+        }
+
+        .provider-icon-svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+        }
+
+        /* Divider */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: var(--text-muted);
+            font-size: 14px;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+            background: var(--bg-input);
+            color: var(--text-main);
+        }
+
+        html.light-mode .form-input,
+        body.light-mode .form-input {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border-color: rgba(0, 119, 255, 0.25) !important;
+        }
+
+        html.light-mode .form-input:focus,
+        body.light-mode .form-input:focus {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #0077ff !important;
+            box-shadow: 0 0 14px rgba(0, 119, 255, 0.2) !important;
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px var(--bg-input) inset !important;
+            -webkit-text-fill-color: var(--text-main) !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        html.light-mode input:-webkit-autofill,
+        body.light-mode input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+
+        .input-wrap:focus-within .input-icon {
+            color: var(--accent-cyan);
+        }
+
+        html.light-mode .input-wrap:focus-within .input-icon,
+        body.light-mode .input-wrap:focus-within .input-icon {
+            color: #0077ff;
+        }
+
+        .btn-toggle-pwd {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-toggle-pwd:hover {
+            color: var(--accent-cyan);
+        }
+
+        html.light-mode .btn-toggle-pwd:hover,
+        body.light-mode .btn-toggle-pwd:hover {
+            color: #0077ff;
+        }
+
+        /* Password Strength Meter */
+        .pwd-strength-container {
+            margin-top: 7px;
+            display: none;
+        }
+
+        .pwd-strength-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        html.light-mode .pwd-strength-bar,
+        body.light-mode .pwd-strength-bar {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .pwd-strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .pwd-strength-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .pwd-strength-status {
+            font-weight: 700;
+        }
+
+        /* Options Row */
+        .form-options-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            font-size: 12.5px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: var(--text-accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .forgot-link:hover {
+            color: var(--accent-cyan);
+            text-decoration: underline;
+        }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%;
+            padding: 12px 20px;
+            background: var(--primary-gradient);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            border-radius: var(--radius-md);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 14.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 6px 20px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 10px 25px rgba(0, 119, 255, 0.45);
+            background: linear-gradient(135deg, #0052cc 0%, #00b4d8 100%);
+        }
+
+
+        /* ==========================================================================
+           MODALS (GOOGLE & PHONE OTP)
+           ========================================================================== */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(2, 11, 24, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .auth-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-content-card {
+            background: #04142b;
+            border: 1px solid var(--border-glass-hover);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 420px;
+            padding: 26px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 119, 255, 0.2);
+            position: relative;
+            color: var(--text-main);
+        }
+
+        html.light-mode .modal-content-card,
+        body.light-mode .modal-content-card {
+            background: #ffffff;
+            border-color: rgba(0, 119, 255, 0.25);
+            color: #0f172a;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-header-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(0, 119, 255, 0.12);
+            border: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 20px;
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .modal-desc {
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Google Accounts */
+        .google-account-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .google-account-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: rgba(6, 24, 48, 0.7);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+        }
+
+        html.light-mode .google-account-item,
+        body.light-mode .google-account-item {
+            background: #f8fafc;
+            border-color: rgba(0, 119, 255, 0.15);
+        }
+
+        .google-account-item:hover {
+            background: rgba(0, 140, 255, 0.15);
+            border-color: var(--accent-cyan);
+            transform: translateX(3px);
+        }
+
+        .google-acc-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid #4285F4;
+        }
+
+        .google-acc-info {
+            overflow: hidden;
+        }
+
+        .google-acc-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .google-acc-email {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+        }
+
+        /* OTP Code Input 6-Boxes */
+        .otp-inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            margin: 18px 0 14px;
+        }
+
+        .otp-digit-input {
+            height: 48px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border-glass);
+            border-radius: 8px;
+            color: var(--text-main);
+            transition: var(--transition);
+        }
+
+        html.light-mode .otp-digit-input,
+        body.light-mode .otp-digit-input {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border-color: rgba(0, 119, 255, 0.25) !important;
+        }
+
+        .otp-digit-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+        }
+
+        .phone-input-combo {
+            display: flex;
+            gap: 8px;
+        }
+
+        .country-select {
+            padding: 10px 8px;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 13px;
+            width: 105px;
+            cursor: pointer;
+        }
+
+        html.light-mode .country-select,
+        body.light-mode .country-select {
+            background: #ffffff;
+            color: #0f172a;
+            border-color: rgba(0, 119, 255, 0.25);
+        }
+
+        .country-select option {
+            background: #04142a;
+            color: white;
+        }
+
+        html.light-mode .country-select option,
+        body.light-mode .country-select option {
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        .otp-resend-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .btn-resend-otp {
+            background: none;
+            border: none;
+            color: var(--text-accent);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-resend-otp:disabled {
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="cyber-grid-bg"></div>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div id="authNavBackWrap"></div>
+
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+            <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+    </nav>
+
+    <!-- Main Auth Card -->
+    <div class="auth-wrapper">
+        <div class="auth-card">
+
+            <!-- Brand Header -->
+            <div class="auth-brand">
+                <div class="auth-logo-wrap">
+                    <img src="veriscan-logo-transparent.png" alt="VeriScan" class="auth-logo-img" onerror="this.onerror=null; this.src='veriscan-logo.png';">
+                </div>
+                <h1 class="auth-title" id="authHeading">Welcome Back</h1>
+                <p class="auth-subtitle" id="authSubheading">Sign in to your VeriScan account</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" id="tabSignIn" onclick="switchAuthTab('signin')">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Sign In
+                </button>
+                <button class="auth-tab-btn" id="tabSignUp" onclick="switchAuthTab('signup')">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </div>
+
+            <!-- 1-Click Social / Provider Auth -->
+            <div class="social-auth-grid">
+                <!-- Google Sign-In -->
+                <button type="button" class="btn-provider google" onclick="openGoogleAuthModal()">
+                    <svg class="provider-icon-svg" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                    </svg>
+                    <span id="googleBtnText">Continue with Google</span>
+                </button>
+
+                <!-- Phone SMS Sign-In -->
+                <button type="button" class="btn-provider phone" onclick="openPhoneAuthModal()">
+                    <i class="fas fa-mobile-screen-button provider-icon-svg" style="color:#00f5a0; font-size:16px;"></i>
+                    <span id="phoneBtnText">Continue with Phone Number</span>
+                </button>
+            </div>
+
+            <!-- Divider -->
+            <div class="auth-divider">
+                <span>Or use email</span>
+            </div>
+
+            <!-- Main Auth Form -->
+            <form id="authForm" onsubmit="handleAuthSubmit(event)">
+
+                <!-- Full Name (Sign Up only) -->
+                <div class="form-group" id="nameGroup" style="display: none;">
+                    <label class="form-label" for="fullNameInput">Full Name</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" id="fullNameInput" class="form-input" placeholder="e.g. Alina Verma">
+                    </div>
+                </div>
+
+                <!-- Email Input -->
+                <div class="form-group">
+                    <label class="form-label" for="emailInput">Email Address</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" id="emailInput" class="form-input" placeholder="analyst@agency.org" required>
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="form-group">
+                    <label class="form-label" for="passwordInput">Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" id="passwordInput" class="form-input" placeholder="••••••••••••" required oninput="evaluatePasswordStrength(this.value)">
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('passwordInput', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <!-- Password Strength Meter (Shown on Sign Up) -->
+                    <div class="pwd-strength-container" id="pwdStrengthBox">
+                        <div class="pwd-strength-bar">
+                            <div class="pwd-strength-fill" id="pwdStrengthFill"></div>
+                        </div>
+                        <div class="pwd-strength-labels">
+                            <span style="font-size:10px;">Strength</span>
+                            <span class="pwd-strength-status" id="pwdStrengthStatus">Too Weak</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirm Password (Sign Up only) -->
+                <div class="form-group" id="confirmPwdGroup" style="display: none;">
+                    <label class="form-label" for="confirmPasswordInput">Confirm Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-shield-check input-icon"></i>
+                        <input type="password" id="confirmPasswordInput" class="form-input" placeholder="••••••••••••">
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('confirmPasswordInput', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Options Row (Remember Me / Forgot Password) -->
+                <div class="form-options-row" id="formOptionsRow">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe" checked>
+                        <span>Remember session</span>
+                    </label>
+                    <a href="javascript:void(0)" onclick="openForgotPasswordModal()" class="forgot-link">Forgot password?</a>
+                </div>
+
+                <!-- Terms Checkbox (Sign Up only) -->
+                <div class="form-group" id="termsGroup" style="display: none; margin-bottom: 16px;">
+                    <label class="checkbox-label" style="font-size: 12px; line-height: 1.4;">
+                        <input type="checkbox" id="agreeTerms" checked>
+                        <span>I accept the <a href="javascript:void(0)" class="forgot-link">Terms of Service</a> & <a href="javascript:void(0)" class="forgot-link">Privacy Policy</a></span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fas fa-arrow-right-to-bracket" id="submitIcon"></i>
+                    <span id="submitBtnText">Sign In</span>
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         GOOGLE OAUTH ACCOUNT CHOOSER MODAL
+         ========================================================================== -->
+    <div class="auth-modal" id="googleAuthModal">
+        <div class="modal-content-card">
+            <button class="modal-close-btn" onclick="closeModal('googleAuthModal')">&times;</button>
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background:rgba(66,133,244,0.15); border-color:#4285F4;">
+                    <i class="fab fa-google" style="color:#4285F4;"></i>
+                </div>
+                <h3 class="modal-title">Sign in with Google</h3>
+                <p class="modal-desc">Choose an account to continue to <strong>VeriScan</strong></p>
+            </div>
+
+            <div class="google-account-list">
+                <!-- Account 1 -->
+                <div class="google-account-item" onclick="selectGoogleAccount('alex')">
+                    <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80" alt="Alex Morgan" class="google-acc-avatar">
+                    <div class="google-acc-info">
+                        <div class="google-acc-name">Alex Morgan</div>
+                        <div class="google-acc-email">alex.morgan.cyber@gmail.com</div>
+                    </div>
+                </div>
+
+                <!-- Account 2 -->
+                <div class="google-account-item" onclick="selectGoogleAccount('sarah')">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Sarah Chen" class="google-acc-avatar">
+                    <div class="google-acc-info">
+                        <div class="google-acc-name">Dr. Sarah Chen</div>
+                        <div class="google-acc-email">sarah.chen@gmail.com</div>
+                    </div>
+                </div>
+
+                <!-- Custom Account Input -->
+                <div style="margin-top:6px; padding:10px; background:rgba(0,140,255,0.06); border:1px dashed var(--border-glass); border-radius:8px;">
+                    <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:5px;">Or enter your Google email:</label>
+                    <div style="display:flex; gap:6px;">
+                        <input type="email" id="customGoogleEmail" placeholder="yourname@gmail.com" class="form-input" style="padding:7px 10px; font-size:12.5px;">
+                        <button type="button" onclick="selectCustomGoogleAccount()" class="btn-submit" style="width:auto; padding:7px 12px; font-size:12px;">Continue</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         PHONE SMS & OTP MODAL
+         ========================================================================== -->
+    <div class="auth-modal" id="phoneAuthModal">
+        <div class="modal-content-card">
+            <button class="modal-close-btn" onclick="closeModal('phoneAuthModal')">&times;</button>
+
+            <!-- Step 1: Enter Phone Number -->
+            <div id="phoneStep1">
+                <div class="modal-header">
+                    <div class="modal-header-icon" style="background:rgba(0,245,160,0.15); border-color:#00f5a0;">
+                        <i class="fas fa-mobile-screen-button" style="color:#00f5a0;"></i>
+                    </div>
+                    <h3 class="modal-title">Phone Verification</h3>
+                    <p class="modal-desc">We will send a 6-digit one-time passcode to verify your number</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <div class="phone-input-combo">
+                        <select class="country-select" id="countryCodeSelect">
+                            <option value="+91" selected>🇮🇳 +91</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+44">🇬🇧 +44</option>
+                            <option value="+61">🇦🇺 +61</option>
+                            <option value="+49">🇩🇪 +49</option>
+                            <option value="+81">🇯🇵 +81</option>
+                            <option value="+971">🇦🇪 +971</option>
+                        </select>
+                        <input type="tel" id="mobileNumberInput" class="form-input" placeholder="98765 43210" style="padding-left:14px;" value="9876543210">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-submit" onclick="sendPhoneOtp()" style="margin-top:14px;">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send Verification Code</span>
+                </button>
+            </div>
+
+            <!-- Step 2: Enter 6-Digit OTP -->
+            <div id="phoneStep2" style="display:none;">
+                <div class="modal-header">
+                    <div class="modal-header-icon" style="background:rgba(0,240,255,0.15); border-color:#00f0ff;">
+                        <i class="fas fa-key" style="color:#00f0ff;"></i>
+                    </div>
+                    <h3 class="modal-title">Enter 6-Digit Code</h3>
+                    <p class="modal-desc">Sent to <strong id="displayTargetPhone" style="color:#00f0ff;">+91 98765 43210</strong></p>
+                </div>
+
+                <div class="otp-inputs-grid">
+                    <input type="text" maxlength="1" class="otp-digit-input" id="otp1" autofocus oninput="handleOtpInput(this, 'otp2', '')">
+                    <input type="text" maxlength="1" class="otp-digit-input" id="otp2" oninput="handleOtpInput(this, 'otp3', 'otp1')">
+                    <input type="text" maxlength="1" class="otp-digit-input" id="otp3" oninput="handleOtpInput(this, 'otp4', 'otp2')">
+                    <input type="text" maxlength="1" class="otp-digit-input" id="otp4" oninput="handleOtpInput(this, 'otp5', 'otp3')">
+                    <input type="text" maxlength="1" class="otp-digit-input" id="otp5" oninput="handleOtpInput(this, 'otp6', 'otp4')">
+                    <input type="text" maxlength="1" class="otp-digit-input" id="otp6" oninput="handleOtpInput(this, '', 'otp5')">
+                </div>
+
+                <div class="otp-resend-row">
+                    <span>Didn't receive code?</span>
+                    <button type="button" class="btn-resend-otp" id="resendOtpBtn" onclick="resendOtp()" disabled>Resend in <span id="countdownTimer">30</span>s</button>
+                </div>
+
+                <div style="text-align:center; margin-bottom:14px;">
+                    <button type="button" onclick="autoFillDemoOtp()" style="background:rgba(0,240,255,0.1); border:1px dashed #00d2ff; color:#38bdf8; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer;">
+                        <i class="fas fa-wand-magic-sparkles"></i> Auto-fill (123456)
+                    </button>
+                </div>
+
+                <button type="button" class="btn-submit" onclick="verifyPhoneOtp()">
+                    <i class="fas fa-check-double"></i>
+                    <span>Verify & Continue</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         FORGOT PASSWORD MODAL
+         ========================================================================== -->
+    <div class="auth-modal" id="forgotPasswordModal">
+        <div class="modal-content-card">
+            <button class="modal-close-btn" onclick="closeModal('forgotPasswordModal')">&times;</button>
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background:rgba(245,158,11,0.15); border-color:#f59e0b;">
+                    <i class="fas fa-key" style="color:#f59e0b;"></i>
+                </div>
+                <h3 class="modal-title">Reset Password</h3>
+                <p class="modal-desc">Enter your email and we'll send password reset instructions.</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <div class="input-wrap">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="resetEmailInput" class="form-input" placeholder="name@agency.com">
+                </div>
+            </div>
+
+            <button type="button" class="btn-submit" onclick="handleSendPasswordReset()" style="margin-top:14px;">
+                <i class="fas fa-paper-plane"></i>
+                <span>Send Reset Link</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Core Auth Script -->
+    <script src="auth.js"></script>
+
+    <script>
+        let currentMode = 'signin';
+        let otpCountdown = 30;
+        let countdownInterval = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            if (mode === 'signup') {
+                switchAuthTab('signup');
+            }
+
+            const activeUser = VeriScanAuth.getCurrentUser();
+            const navBackWrap = document.getElementById('authNavBackWrap');
+            if (activeUser) {
+                VeriScanAuth.showAuthToast(`Active session: ${activeUser.name}`, 'info');
+                if (navBackWrap) {
+                    navBackWrap.innerHTML = `
+                        <a href="index.html" class="back-link" style="border-color:var(--accent-cyan); color:var(--text-main);">
+                            <i class="fas fa-shield-halved" style="color:var(--accent-cyan);"></i>
+                            <span>Continue to Dashboard</span>
+                            <i class="fas fa-arrow-right" style="font-size:11px; margin-left:2px;"></i>
+                        </a>
+                    `;
+                }
+            } else {
+                if (navBackWrap) navBackWrap.innerHTML = '';
+            }
+        });
+
+        // Switch between Sign In and Sign Up tabs
+        function switchAuthTab(mode) {
+            currentMode = mode;
+            const tabSignIn = document.getElementById('tabSignIn');
+            const tabSignUp = document.getElementById('tabSignUp');
+            const heading = document.getElementById('authHeading');
+            const subheading = document.getElementById('authSubheading');
+            const nameGroup = document.getElementById('nameGroup');
+            const confirmPwdGroup = document.getElementById('confirmPwdGroup');
+            const formOptionsRow = document.getElementById('formOptionsRow');
+            const termsGroup = document.getElementById('termsGroup');
+            const submitBtnText = document.getElementById('submitBtnText');
+            const submitIcon = document.getElementById('submitIcon');
+            const pwdStrengthBox = document.getElementById('pwdStrengthBox');
+            const googleBtnText = document.getElementById('googleBtnText');
+            const phoneBtnText = document.getElementById('phoneBtnText');
+
+            if (mode === 'signup') {
+                tabSignUp.classList.add('active');
+                tabSignIn.classList.remove('active');
+                heading.textContent = 'Create an Account';
+                subheading.textContent = 'Get started with VeriScan profile authentication';
+                nameGroup.style.display = 'block';
+                confirmPwdGroup.style.display = 'block';
+                formOptionsRow.style.display = 'none';
+                termsGroup.style.display = 'block';
+                pwdStrengthBox.style.display = 'block';
+                submitBtnText.textContent = 'Create Account';
+                submitIcon.className = 'fas fa-user-plus';
+                googleBtnText.textContent = 'Sign Up with Google';
+                phoneBtnText.textContent = 'Sign Up with Phone';
+            } else {
+                tabSignIn.classList.add('active');
+                tabSignUp.classList.remove('active');
+                heading.textContent = 'Welcome Back';
+                subheading.textContent = 'Sign in to your VeriScan account';
+                nameGroup.style.display = 'none';
+                confirmPwdGroup.style.display = 'none';
+                formOptionsRow.style.display = 'flex';
+                termsGroup.style.display = 'none';
+                pwdStrengthBox.style.display = 'none';
+                submitBtnText.textContent = 'Sign In';
+                submitIcon.className = 'fas fa-arrow-right-to-bracket';
+                googleBtnText.textContent = 'Continue with Google';
+                phoneBtnText.textContent = 'Continue with Phone Number';
+            }
+        }
+
+        // Toggle Password Visibility
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        // Password Strength Evaluator
+        function evaluatePasswordStrength(password) {
+            if (currentMode !== 'signup') return;
+            const fill = document.getElementById('pwdStrengthFill');
+            const status = document.getElementById('pwdStrengthStatus');
+
+            let score = 0;
+            if (password.length >= 6) score++;
+            if (password.length >= 10) score++;
+            if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            if (score <= 1) {
+                fill.style.width = '25%';
+                fill.style.backgroundColor = '#ef4444';
+                status.textContent = 'Weak';
+                status.style.color = '#ef4444';
+            } else if (score <= 3) {
+                fill.style.width = '65%';
+                fill.style.backgroundColor = '#f59e0b';
+                status.textContent = 'Moderate';
+                status.style.color = '#f59e0b';
+            } else {
+                fill.style.width = '100%';
+                fill.style.backgroundColor = '#00f5a0';
+                status.textContent = 'Strong';
+                status.style.color = '#00f5a0';
+            }
+        }
+
+        // Handle Main Email / Password Form Submit
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            if (currentMode === 'signup') {
+                const fullName = document.getElementById('fullNameInput').value.trim();
+                const confirmPassword = document.getElementById('confirmPasswordInput').value;
+                const terms = document.getElementById('agreeTerms').checked;
+
+                if (!fullName) {
+                    VeriScanAuth.showAuthToast('Please enter your full name', 'error');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    VeriScanAuth.showAuthToast('Passwords do not match', 'error');
+                    return;
+                }
+                if (!terms) {
+                    VeriScanAuth.showAuthToast('Please accept the Terms & Conditions', 'error');
+                    return;
+                }
+
+                // Register and log user in
+                const user = VeriScanAuth.loginWithEmail(email, password, fullName);
+                triggerSuccessAndRedirect(`Account created! Welcome, ${user.name}`);
+            } else {
+                // Sign In
+                const user = VeriScanAuth.loginWithEmail(email, password);
+                triggerSuccessAndRedirect(`Welcome back, ${user.name}!`);
+            }
+        }
+
+        // Google OAuth Modal handlers
+        function openGoogleAuthModal() {
+            document.getElementById('googleAuthModal').classList.add('active');
+        }
+
+        function selectGoogleAccount(accountType) {
+            closeModal('googleAuthModal');
+            if (accountType === 'alex') {
+                const user = VeriScanAuth.loginWithGoogle({
+                    name: 'Alex Morgan',
+                    email: 'alex.morgan.cyber@gmail.com',
+                    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
+                    role: 'Senior Cyber Risk Analyst'
+                });
+                triggerSuccessAndRedirect(`Signed in via Google as ${user.name}`);
+            } else if (accountType === 'sarah') {
+                const user = VeriScanAuth.loginWithGoogle({
+                    name: 'Dr. Sarah Chen',
+                    email: 'sarah.chen@gmail.com',
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    role: 'Lead Threat Intelligence Specialist'
+                });
+                triggerSuccessAndRedirect(`Signed in via Google as ${user.name}`);
+            }
+        }
+
+        function selectCustomGoogleAccount() {
+            const email = document.getElementById('customGoogleEmail').value.trim();
+            if (!email || !email.includes('@')) {
+                VeriScanAuth.showAuthToast('Please enter a valid Google email address', 'error');
+                return;
+            }
+            closeModal('googleAuthModal');
+            const user = VeriScanAuth.loginWithGoogle({
+                name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                email: email,
+                role: 'Profile Analyst'
+            });
+            triggerSuccessAndRedirect(`Signed in via Google as ${user.name}`);
+        }
+
+        // Phone SMS OTP Modal handlers
+        function openPhoneAuthModal() {
+            document.getElementById('phoneAuthModal').classList.add('active');
+            document.getElementById('phoneStep1').style.display = 'block';
+            document.getElementById('phoneStep2').style.display = 'none';
+        }
+
+        function sendPhoneOtp() {
+            const code = document.getElementById('countryCodeSelect').value;
+            const phone = document.getElementById('mobileNumberInput').value.trim();
+
+            if (!phone || phone.length < 6) {
+                VeriScanAuth.showAuthToast('Please enter a valid mobile number', 'error');
+                return;
+            }
+
+            const fullPhone = `${code} ${phone}`;
+            document.getElementById('displayTargetPhone').textContent = fullPhone;
+            document.getElementById('phoneStep1').style.display = 'none';
+            document.getElementById('phoneStep2').style.display = 'block';
+
+            startOtpCountdown();
+            VeriScanAuth.showAuthToast(`6-Digit OTP sent to ${fullPhone}`, 'info');
+
+            setTimeout(() => {
+                const first = document.getElementById('otp1');
+                if (first) first.focus();
+            }, 100);
+        }
+
+        function startOtpCountdown() {
+            otpCountdown = 30;
+            const timerEl = document.getElementById('countdownTimer');
+            const resendBtn = document.getElementById('resendOtpBtn');
+            resendBtn.disabled = true;
+
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+                otpCountdown--;
+                if (timerEl) timerEl.textContent = otpCountdown;
+                if (otpCountdown <= 0) {
+                    clearInterval(countdownInterval);
+                    resendBtn.disabled = false;
+                    resendBtn.innerHTML = '<i class="fas fa-rotate-right"></i> Resend Code';
+                }
+            }, 1000);
+        }
+
+        function resendOtp() {
+            startOtpCountdown();
+            VeriScanAuth.showAuthToast('A new 6-digit OTP code has been dispatched via SMS', 'info');
+        }
+
+        function handleOtpInput(input, nextId, prevId) {
+            if (input.value.length > 1) {
+                const digits = input.value.replace(/\D/g, '').split('');
+                for (let i = 0; i < 6; i++) {
+                    const box = document.getElementById(`otp${i + 1}`);
+                    if (box && digits[i]) {
+                        box.value = digits[i];
+                    }
+                }
+                const last = document.getElementById('otp6');
+                if (last) last.focus();
+                return;
+            }
+
+            if (input.value && nextId) {
+                const next = document.getElementById(nextId);
+                if (next) next.focus();
+            }
+        }
+
+        function autoFillDemoOtp() {
+            for (let i = 1; i <= 6; i++) {
+                const box = document.getElementById(`otp${i}`);
+                if (box) box.value = i.toString();
+            }
+            VeriScanAuth.showAuthToast('Code 123456 auto-filled', 'success');
+        }
+
+        function verifyPhoneOtp() {
+            let entered = '';
+            for (let i = 1; i <= 6; i++) {
+                const box = document.getElementById(`otp${i}`);
+                entered += (box ? box.value : '');
+            }
+
+            if (entered.length < 6) {
+                VeriScanAuth.showAuthToast('Please enter all 6 digits of the OTP code', 'error');
+                return;
+            }
+
+            const code = document.getElementById('countryCodeSelect').value;
+            const phone = document.getElementById('mobileNumberInput').value.trim();
+            const fullPhone = `${code} ${phone}`;
+
+            closeModal('phoneAuthModal');
+            const user = VeriScanAuth.loginWithPhone({ phone: fullPhone });
+            triggerSuccessAndRedirect(`Phone verified: ${user.phone}`);
+        }
+
+        // Forgot Password Modal
+        function openForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.add('active');
+        }
+
+        function handleSendPasswordReset() {
+            const email = document.getElementById('resetEmailInput').value.trim();
+            if (!email || !email.includes('@')) {
+                VeriScanAuth.showAuthToast('Please enter a valid email', 'error');
+                return;
+            }
+            closeModal('forgotPasswordModal');
+            VeriScanAuth.showAuthToast(`Reset instructions sent to ${email}`, 'success');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        }
+
+        function triggerSuccessAndRedirect(msg) {
+            VeriScanAuth.showAuthToast(msg, 'success');
+
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 60, spread: 55, origin: { y: 0.65 } });
+                }
+            } catch (e) { }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') || 'index.html';
+
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 900);
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const isLight = document.documentElement.classList.toggle('light-mode');
+            if (document.body) document.body.classList.toggle('light-mode', isLight);
+            const icon = document.getElementById('themeIcon');
+            if (isLight) {
+                localStorage.setItem('veriscan_theme', 'light');
+                if (icon) icon.className = 'fas fa-sun';
+            } else {
+                localStorage.setItem('veriscan_theme', 'dark');
+                if (icon) icon.className = 'fas fa-moon';
+            }
+        }
+
+        if (localStorage.getItem('veriscan_theme') === 'light') {
+            const icon = document.getElementById('themeIcon');
+            if (icon) icon.className = 'fas fa-sun';
+        }
+    </script>
+</body>
+
+</html>

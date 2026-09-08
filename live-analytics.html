@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeriScan — Profile Audit History & Analytics</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Immediate Authentication Guard -->
+    <script>
+        (function() {
+            try {
+                const user = localStorage.getItem("veriscan_auth_user");
+                if (!user) {
+                    const redirectUrl = "login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.replace(redirectUrl);
+                }
+            } catch(e) {
+                window.location.replace("login.html");
+            }
+        })();
+    </script>
+
+    <!-- VeriScan Authentication Engine -->
+    <script src="auth.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #020b18;
+            --bg-surface: #04142a;
+            --bg-card: rgba(7, 24, 48, 0.8);
+            --bg-card-hover: rgba(10, 34, 68, 0.9);
+            --bg-input: rgba(4, 15, 32, 0.85);
+            --bg-pill: rgba(0, 140, 255, 0.12);
+
+            --border-glass: rgba(0, 180, 255, 0.18);
+            --border-glass-hover: rgba(0, 210, 255, 0.45);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+
+            --text-main: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-accent: #00d2ff;
+
+            --primary-gradient: linear-gradient(135deg, #0077ff 0%, #00d2ff 100%);
+            --accent-cyan: #00f0ff;
+            --safe-green: #10b981;
+            --med-risk: #f59e0b;
+            --high-risk: #ef4444;
+
+            --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 1px 1px rgba(0, 140, 255, 0.15);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+            --radius-pill: 9999px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.light-mode {
+            --bg-base: #f0f6fc;
+            --bg-surface: #e2edf8;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
+            --bg-input: #ffffff;
+            --bg-pill: #e8f2fc;
+
+            --border-glass: rgba(0, 119, 255, 0.18);
+            --border-glass-hover: rgba(0, 119, 255, 0.4);
+            --border-subtle: rgba(0, 0, 0, 0.06);
+
+            --text-main: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --text-accent: #0284c7;
+
+            --shadow-card: 0 15px 40px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(0, 119, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 12% 15%, rgba(0, 119, 255, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 88% 85%, rgba(0, 240, 255, 0.1) 0%, transparent 40%),
+                linear-gradient(180deg, #020b18 0%, #04142a 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            padding: 20px 24px;
+            overflow-x: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.light-mode {
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(0, 119, 255, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(0, 210, 255, 0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #f0f6fc 0%, #e2edf8 100%);
+        }
+
+        .registry-container {
+            max-width: 1580px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .registry-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-card);
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo-img {
+            height: 38px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .brand-titles {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title-main {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Search & Filter Header Center */
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            max-width: 420px;
+            min-width: 260px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 40px;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border-glass);
+            border-radius: var(--radius-pill);
+            padding: 0 16px 0 38px;
+            font-size: 13px;
+            color: var(--text-main);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 14px rgba(0, 210, 255, 0.25);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            transform: translateY(-1px);
+        }
+
+        .action-btn.primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 119, 255, 0.35);
+        }
+
+        /* Top Navigation Bar */
+        .main-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(4, 18, 38, 0.7);
+            border: 1px solid var(--border-glass);
+            padding: 4px 6px;
+            border-radius: var(--radius-pill);
+            backdrop-filter: blur(12px);
+        }
+
+        body.light-mode .main-nav-links {
+            background: #ffffff;
+            border-color: rgba(0, 119, 255, 0.2);
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+        }
+
+        .nav-tab-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 14px;
+            border-radius: var(--radius-pill);
+            color: var(--text-secondary);
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        body.light-mode .nav-tab-link {
+            color: #475569;
+        }
+
+        .nav-tab-link:hover {
+            color: var(--text-main);
+            background: rgba(0, 140, 255, 0.15);
+        }
+
+        body.light-mode .nav-tab-link:hover {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .nav-tab-link.active {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            box-shadow: 0 2px 10px var(--primary-glow);
+        }
+
+        body.light-mode .nav-tab-link.active {
+            color: #ffffff;
+        }
+
+        .nav-tab-link i {
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        /* Top KPI Metric Cards */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-glass-hover);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: var(--accent-cyan);
+        }
+
+        .kpi-card.blue::before { background: linear-gradient(90deg, #0077ff, #00d2ff); }
+        .kpi-card.green::before { background: linear-gradient(90deg, #10b981, #00f5a0); }
+        .kpi-card.red::before { background: linear-gradient(90deg, #ef4444, #f43f5e); }
+        .kpi-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #c084fc); }
+        .kpi-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .kpi-card.cyan::before { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+
+        .kpi-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-num {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+
+        .kpi-card.blue .kpi-num { color: #38bdf8; }
+        .kpi-card.green .kpi-num { color: #34d399; }
+        .kpi-card.red .kpi-num { color: #f87171; }
+        .kpi-card.purple .kpi-num { color: #c084fc; }
+        .kpi-card.amber .kpi-num { color: #fbbf24; }
+        .kpi-card.cyan .kpi-num { color: #22d3ee; }
+
+        body.light-mode .kpi-card.blue .kpi-num { color: #0284c7; }
+        body.light-mode .kpi-card.green .kpi-num { color: #16a34a; }
+        body.light-mode .kpi-card.red .kpi-num { color: #dc2626; }
+        body.light-mode .kpi-card.purple .kpi-num { color: #7c3aed; }
+        body.light-mode .kpi-card.amber .kpi-num { color: #d97706; }
+        body.light-mode .kpi-card.cyan .kpi-num { color: #0891b2; }
+
+        .kpi-footer {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Analytics Visualizations Row */
+        .analytics-row {
+            display: grid;
+            grid-template-columns: 1.4fr 0.9fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title i {
+            color: var(--accent-cyan);
+        }
+
+        body.light-mode .panel-title i {
+            color: #0284c7;
+        }
+
+        .chart-box {
+            height: 180px;
+            position: relative;
+        }
+
+        /* Workspace Grid (Left: Profile Registry List, Right: Profile Dossier) */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 20px;
+        }
+
+        /* Profile Filter Bar */
+        .filter-tabs-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .platform-tabs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tab-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            padding: 5px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--bg-pill);
+            border-color: var(--accent-cyan);
+            color: var(--text-main);
+        }
+
+        body.light-mode .tab-btn.active {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-color: #38bdf8;
+        }
+
+        /* Profile Registry List */
+        .profile-list-container {
+            max-height: 600px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 4px;
+        }
+
+        .profile-list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .profile-list-container::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 4px;
+        }
+
+        .profile-card-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-input);
+            border: 1.5px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-card-item:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+            background: var(--bg-card-hover);
+        }
+
+        .profile-card-item.selected {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 119, 255, 0.12);
+            box-shadow: 0 0 16px rgba(0, 210, 255, 0.2);
+        }
+
+        body.light-mode .profile-card-item {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+        }
+
+        body.light-mode .profile-card-item:hover {
+            background: #f8fafc;
+            border-color: #0077ff;
+        }
+
+        body.light-mode .profile-card-item.selected {
+            background: #eff6ff;
+            border-color: #0077ff;
+            box-shadow: 0 4px 16px rgba(0, 119, 255, 0.15);
+        }
+
+        .profile-info-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .platform-icon-bubble {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .platform-icon-bubble.instagram { color: #e1306c; background: rgba(225, 48, 108, 0.15); }
+        .platform-icon-bubble.x { color: #ffffff; background: rgba(255, 255, 255, 0.15); }
+        body.light-mode .platform-icon-bubble.x { color: #0f172a; background: #e2e8f0; }
+        .platform-icon-bubble.facebook { color: #1877f2; background: rgba(24, 119, 242, 0.15); }
+        .platform-icon-bubble.linkedin { color: #0a66c2; background: rgba(10, 102, 194, 0.15); }
+
+        .profile-text-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile-handle {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .profile-date-platform {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .profile-right-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .verdict-pill {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+        }
+
+        .verdict-pill.low { background: rgba(16, 185, 129, 0.18); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .verdict-pill.med { background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .verdict-pill.high { background: rgba(239, 68, 68, 0.18); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+        body.light-mode .verdict-pill.low { background: #dcfce7; color: #15803d; border-color: #86efac; }
+        body.light-mode .verdict-pill.med { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        body.light-mode .verdict-pill.high { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+
+        .score-circle-mini {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            border: 2.5px solid #10b981;
+            color: #10b981;
+        }
+
+        .score-circle-mini.med { border-color: #f59e0b; color: #f59e0b; }
+        .score-circle-mini.high { border-color: #ef4444; color: #ef4444; }
+
+        /* Profile Dossier Inspector (Right Column) */
+        .dossier-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            box-shadow: var(--shadow-card);
+            position: sticky;
+            top: 20px;
+        }
+
+        .dossier-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 16px;
+        }
+
+        .dossier-profile-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .dossier-avatar-bubble {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(0, 119, 255, 0.2);
+            border: 2px solid var(--accent-cyan);
+        }
+
+        .dossier-handle {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .dossier-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .dossier-score-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        body.light-mode .dossier-score-hero {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .score-hero-stat {
+            text-align: center;
+        }
+
+        .score-hero-val {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+        }
+
+        .score-hero-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* 4 Pillars Matrix in Dossier */
+        .dossier-pillars-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .dossier-pillar-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+        }
+
+        body.light-mode .dossier-pillar-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dossier-pillar-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        body.light-mode .dossier-pillar-title {
+            color: #0284c7;
+        }
+
+        .dossier-pillar-val {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* SHAP Feature Bars in Dossier */
+        .dossier-xai-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+
+        body.light-mode .dossier-xai-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dossier-shap-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .dossier-shap-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        body.light-mode .dossier-shap-track {
+            background: #e2e8f0;
+        }
+
+        body.light-mode .search-input {
+            background: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+
+        body.light-mode .search-input::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
+        }
+
+        body.light-mode .search-input:focus {
+            border-color: #0077ff !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            box-shadow: 0 0 0 3px rgba(0, 119, 255, 0.18), 0 2px 10px rgba(0, 119, 255, 0.1) !important;
+        }
+
+        body.light-mode .search-icon {
+            color: #64748b;
+        }
+
+        body.light-mode .action-btn {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        body.light-mode .action-btn:hover {
+            background: #f1f5f9;
+            border-color: #0077ff;
+            color: #0077ff;
+        }
+
+        .dossier-shap-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #00f5a0);
+            border-radius: 4px;
+        }
+
+        .dossier-shap-fill.amber { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .dossier-shap-fill.red { background: linear-gradient(90deg, #ef4444, #f43f5e); }
+
+        .dossier-actions-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .kpi-row { grid-template-columns: repeat(3, 1fr); }
+            .analytics-row { grid-template-columns: 1fr; }
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .kpi-row { grid-template-columns: 1fr 1fr; }
+            .dossier-pillars-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="registry-container">
+        
+        <!-- Header -->
+        <header class="registry-header">
+            <div class="brand-cluster">
+                <a href="index.html" style="display:flex; align-items:center; text-decoration:none;">
+                    <img src="veriscan-logo-transparent.png" alt="VeriScan Logo" class="brand-logo-img" id="registryLogo">
+                </a>
+                <div class="brand-titles">
+                    <div class="brand-title-main">
+                        Profile Audit History
+                        <span style="font-size:10px; font-weight:600; color:var(--accent-cyan); background:rgba(0,210,255,0.12); padding:2px 6px; border-radius:4px;">LIVE OSINT</span>
+                    </div>
+                    <div class="brand-subtitle">Historical audit logs across Instagram, X, Facebook, and LinkedIn</div>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <a href="index.html" class="action-btn" title="Back to Scanner Dashboard">
+                    <i class="fas fa-shield-halved"></i> Scanner
+                </a>
+                <button class="action-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+                <button class="action-btn" onclick="exportHistoryCsv()" title="Export all audit history to CSV">
+                    <i class="fas fa-file-arrow-down"></i> Export Logs
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI 6-Grid Ribbon (Computed from History) -->
+        <div class="kpi-row">
+            <div class="kpi-card blue">
+                <div class="kpi-top">
+                    <span class="kpi-title">Profiles Audited</span>
+                    <i class="fas fa-users-viewfinder"></i>
+                </div>
+                <div class="kpi-num" id="kpiTotalAudits">428</div>
+                <div class="kpi-footer">Across 4 Core Platforms</div>
+            </div>
+
+            <div class="kpi-card green">
+                <div class="kpi-top">
+                    <span class="kpi-title">Verified Genuine</span>
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="kpi-num" id="kpiGenuineCount">363</div>
+                <div class="kpi-footer" style="color:#10b981;">84.8% Authenticity Rate</div>
+            </div>
+
+            <div class="kpi-card red">
+                <div class="kpi-top">
+                    <span class="kpi-title">Flagged Fake / Bots</span>
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="kpi-num" id="kpiFakeCount">65</div>
+                <div class="kpi-footer" style="color:#ef4444;">15.2% Malicious Rate</div>
+            </div>
+
+            <div class="kpi-card amber">
+                <div class="kpi-top">
+                    <span class="kpi-title">Avg Profile Trust</span>
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="kpi-num" id="kpiAvgTrust">86.4%</div>
+                <div class="kpi-footer">Platt-Calibrated Average</div>
+            </div>
+
+            <div class="kpi-card purple">
+                <div class="kpi-top">
+                    <span class="kpi-title">Deepfake Avatars</span>
+                    <i class="fas fa-face-viewfinder"></i>
+                </div>
+                <div class="kpi-num" id="kpiDeepfakeCount">19</div>
+                <div class="kpi-footer">GAN Synthetic Face Detections</div>
+            </div>
+
+            <div class="kpi-card cyan">
+                <div class="kpi-top">
+                    <span class="kpi-title">Top Audited</span>
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <div class="kpi-num" id="kpiTopPlatform" style="font-size:20px; margin-top:4px;">Instagram (40%)</div>
+                <div class="kpi-footer">Followed by X (28%)</div>
+            </div>
+        </div>
+
+        <!-- 3 History Analytics Charts -->
+        <div class="analytics-row">
+            
+            <!-- 1. Historical Trust Score Timeline -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-chart-line"></i>
+                        Profile Trust Score History Timeline
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">Audits Over Time</span>
+                </div>
+                <div class="chart-box">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 2. Platform Distribution Donut -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Audited Profiles by Platform
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">4 Platforms</span>
+                </div>
+                <div class="chart-box">
+                    <canvas id="platformDonutChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3. Threat Signal Distribution Bar -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Primary Risk Vectors in History
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);">Top Red Flags</span>
+                </div>
+                <div class="chart-box">
+                    <canvas id="riskVectorsChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Main Workspace: Profile History Registry & Detailed Dossier -->
+        <div class="workspace-grid">
+            
+            <!-- Left: Filterable Profile History Registry -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-folder-open"></i>
+                        Profile Audit Investigation Registry
+                    </div>
+                    <span style="font-size:11px; color:var(--text-muted);" id="registryCountLabel">Showing all audits</span>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="filter-tabs-bar">
+                    <div class="platform-tabs">
+                        <button class="tab-btn active" onclick="filterByPlatform('all', this)">All Platforms</button>
+                        <button class="tab-btn" onclick="filterByPlatform('Instagram', this)"><i class="fab fa-instagram" style="color:#e1306c;"></i> Instagram</button>
+                        <button class="tab-btn" onclick="filterByPlatform('X', this)"><i class="fab fa-x-twitter"></i> X</button>
+                        <button class="tab-btn" onclick="filterByPlatform('Facebook', this)"><i class="fab fa-facebook-f" style="color:#1877f2;"></i> Facebook</button>
+                        <button class="tab-btn" onclick="filterByPlatform('LinkedIn', this)"><i class="fab fa-linkedin-in" style="color:#0a66c2;"></i> LinkedIn</button>
+                    </div>
+                    <div>
+                        <button class="tab-btn" id="riskOnlyBtn" onclick="toggleRiskOnly(this)">
+                            <i class="fas fa-shield-virus" style="color:#ef4444;"></i> Flagged Risks Only
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Profile History Items -->
+                <div class="profile-list-container" id="profileList">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Right: Selected Profile Detailed Forensic Dossier -->
+            <div>
+                <div class="dossier-card" id="profileDossier">
+                    
+                    <div class="dossier-top">
+                        <div class="dossier-profile-header">
+                            <div class="dossier-avatar-bubble" id="dossierIconBubble">
+                                <i class="fab fa-instagram" id="dossierPlatformIcon"></i>
+                            </div>
+                            <div>
+                                <div class="dossier-handle" id="dossierHandle">@johndoe</div>
+                                <div class="dossier-sub" id="dossierSub">Instagram • Audited 2 hours ago</div>
+                            </div>
+                        </div>
+                        <span class="verdict-pill low" id="dossierVerdictBadge">Likely Genuine</span>
+                    </div>
+
+                    <!-- Trust & FPS Score Metric Hero -->
+                    <div class="dossier-score-hero">
+                        <div class="score-hero-stat">
+                            <div class="score-hero-val" style="color:#10b981;" id="dossierTrustVal">92%</div>
+                            <div class="score-hero-lbl">Trust Score</div>
+                        </div>
+                        <div style="width:1px; height:32px; background:var(--border-subtle);"></div>
+                        <div class="score-hero-stat">
+                            <div class="score-hero-val" style="color:#ef4444;" id="dossierFpsVal">8%</div>
+                            <div class="score-hero-lbl">Fake Probability (FPS)</div>
+                        </div>
+                        <div style="width:1px; height:32px; background:var(--border-subtle);"></div>
+                        <div class="score-hero-stat">
+                            <div class="score-hero-val" style="color:#38bdf8;" id="dossierConfVal">94.8%</div>
+                            <div class="score-hero-lbl">Ensemble Confidence</div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Analytical Pillars Matrix -->
+                    <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
+                        <i class="fas fa-shield-check" style="color:var(--accent-cyan);"></i> 4-Pillar Multi-Modal Assessment
+                    </div>
+                    <div class="dossier-pillars-grid">
+                        <div class="dossier-pillar-box">
+                            <div class="dossier-pillar-title"><span>1. Metadata</span> <span style="color:#10b981;">CLEAN</span></div>
+                            <div class="dossier-pillar-val" id="dossierMetaVal">Account Age: 3+ Yrs • Balanced Ratio</div>
+                        </div>
+                        <div class="dossier-pillar-box">
+                            <div class="dossier-pillar-title"><span>2. Vision Forensics</span> <span style="color:#10b981;">PASS</span></div>
+                            <div class="dossier-pillar-val" id="dossierVisionVal">Real Human Photo • 0 GAN Artifacts</div>
+                        </div>
+                        <div class="dossier-pillar-box">
+                            <div class="dossier-pillar-title"><span>3. Linguistic NLP</span> <span style="color:#10b981;">CLEAN</span></div>
+                            <div class="dossier-pillar-val" id="dossierNlpVal">No Crypto/Scam Trigger Words</div>
+                        </div>
+                        <div class="dossier-pillar-box">
+                            <div class="dossier-pillar-title"><span>4. Bot Dynamics</span> <span style="color:#10b981;">ORGANIC</span></div>
+                            <div class="dossier-pillar-val" id="dossierBotVal">Human Poisson Post Arrival Timing</div>
+                        </div>
+                    </div>
+
+                    <!-- SHAP Feature Attribution -->
+                    <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
+                        <i class="fas fa-brain" style="color:var(--accent-cyan);"></i> Explainable AI Signal Attribution
+                    </div>
+                    <div class="dossier-xai-box">
+                        <div class="dossier-shap-row">
+                            <span>Account Age & Longevity Signal</span>
+                            <strong id="dossierShapVal1" style="color:#10b981;">+34% Genuine</strong>
+                        </div>
+                        <div class="dossier-shap-track"><div class="dossier-shap-fill" id="dossierShapBar1" style="width:88%;"></div></div>
+
+                        <div class="dossier-shap-row">
+                            <span>Avatar & Image Authenticity</span>
+                            <strong id="dossierShapVal2" style="color:#10b981;">+22% Genuine</strong>
+                        </div>
+                        <div class="dossier-shap-track"><div class="dossier-shap-fill" id="dossierShapBar2" style="width:82%;"></div></div>
+
+                        <div class="dossier-shap-row">
+                            <span>Circadian Rhythm & Posting Consistency</span>
+                            <strong id="dossierShapVal3" style="color:#10b981;">+18% Genuine</strong>
+                        </div>
+                        <div class="dossier-shap-track"><div class="dossier-shap-fill" id="dossierShapBar3" style="width:74%;"></div></div>
+                    </div>
+
+                    <!-- Dossier Action Buttons -->
+                    <div class="dossier-actions-row">
+                        <button class="action-btn" onclick="rescanProfileInMainApp()">
+                            <i class="fas fa-rotate-right"></i> Re-Scan in App
+                        </button>
+                        <button class="action-btn primary" onclick="exportProfilePdf()">
+                            <i class="fas fa-file-pdf"></i> Download Report
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Logic -->
+    <script>
+        // Master Profile History Database
+        const initialProfileHistory = [
+            {
+                id: "prof_1",
+                handle: "@johndoe",
+                platform: "Instagram",
+                time: "2 hours ago",
+                timestamp: "2026-08-25 16:15",
+                trust: 92,
+                fps: 8,
+                confidence: "94.8%",
+                tier: "low",
+                verdict: "Likely Genuine",
+                metadata: "Account Age: 3+ Yrs • Balanced Follower Ratio (1.0)",
+                vision: "Real Human Photo • 0 GAN Artifacts",
+                nlp: "No Crypto/Scam Trigger Words",
+                bot: "Human Poisson Curve (9AM–11PM)",
+                shap1: { label: "Account Age & Profile Longevity", val: "+34% Genuine", width: 88, color: "green" },
+                shap2: { label: "Avatar & Facial Image Forensics", val: "+22% Genuine", width: 82, color: "green" },
+                shap3: { label: "Circadian Rhythm Regularity", val: "+18% Genuine", width: 74, color: "green" }
+            },
+            {
+                id: "prof_2",
+                handle: "@techreview",
+                platform: "X",
+                time: "5 hours ago",
+                timestamp: "2026-08-25 13:10",
+                trust: 72,
+                fps: 28,
+                confidence: "89.2%",
+                tier: "med",
+                verdict: "Suspicious Activity",
+                metadata: "Account Age: 1–6 Mos • High Following Skew",
+                vision: "Stock Photography Avatar Pattern",
+                nlp: "Mild Promotional Call-to-Action Density",
+                bot: "Burst Spikes detected during product launch",
+                shap1: { label: "Account Age & Profile Longevity", val: "+12% Review", width: 54, color: "amber" },
+                shap2: { label: "Avatar & Facial Image Forensics", val: "-18% Stock Image", width: 58, color: "amber" },
+                shap3: { label: "Circadian Rhythm Regularity", val: "+10% Organic", width: 52, color: "green" }
+            },
+            {
+                id: "prof_3",
+                handle: "@news_today",
+                platform: "Facebook",
+                time: "1 day ago",
+                timestamp: "2026-08-24 14:22",
+                trust: 18,
+                fps: 82,
+                confidence: "96.4%",
+                tier: "high",
+                verdict: "Malicious Bot Network",
+                metadata: "Account Age: < 30 Days • Mass Following (5000+)",
+                vision: "GAN Synthetic Deepfake Face (StyleGAN)",
+                nlp: "High Urgency Phishing Link Detected",
+                bot: "24/7 Robot Automated Loop (>60 PPD)",
+                shap1: { label: "Account Age & Profile Longevity", val: "-42% Brand New", width: 92, color: "red" },
+                shap2: { label: "Avatar & Facial Image Forensics", val: "-38% GAN Deepfake", width: 86, color: "red" },
+                shap3: { label: "Circadian Rhythm Regularity", val: "-28% Bot Regularity", width: 88, color: "red" }
+            },
+            {
+                id: "prof_4",
+                handle: "@sarah_recruiter",
+                platform: "LinkedIn",
+                time: "2 days ago",
+                timestamp: "2026-08-23 11:45",
+                trust: 94,
+                fps: 6,
+                confidence: "98.1%",
+                tier: "low",
+                verdict: "Likely Genuine",
+                metadata: "Account Age: 3+ Yrs • High Professional Longevity",
+                vision: "High-Resolution Authentic Portrait",
+                nlp: "Natural Linguistic Flow • No Phishing Indicators",
+                bot: "Business Hours Active (9AM–6PM)",
+                shap1: { label: "Account Age & Profile Longevity", val: "+38% Genuine", width: 92, color: "green" },
+                shap2: { label: "Avatar & Facial Image Forensics", val: "+26% Genuine", width: 86, color: "green" },
+                shap3: { label: "Circadian Rhythm Regularity", val: "+20% Genuine", width: 80, color: "green" }
+            },
+            {
+                id: "prof_5",
+                handle: "@crypto_pump_signal_99",
+                platform: "X",
+                time: "3 days ago",
+                timestamp: "2026-08-22 09:30",
+                trust: 8,
+                fps: 92,
+                confidence: "97.5%",
+                tier: "high",
+                verdict: "FinTech Scam Bot",
+                metadata: "Account Age: 4 Days • Follower Skew: 0 Followers, 4800 Following",
+                vision: "Stolen Corporate Logo Variant",
+                nlp: "Extreme Crypto Scam & Giveaway Lexicon Trigger",
+                bot: "Flood Rate: 120 Posts / Hour",
+                shap1: { label: "Account Age & Profile Longevity", val: "-46% Fake Risk", width: 95, color: "red" },
+                shap2: { label: "Avatar & Facial Image Forensics", val: "-34% Stolen Asset", width: 78, color: "red" },
+                shap3: { label: "Circadian Rhythm Regularity", val: "-36% Bot Spike", width: 90, color: "red" }
+            },
+            {
+                id: "prof_6",
+                handle: "@synthetic_ai_model",
+                platform: "Instagram",
+                time: "4 days ago",
+                timestamp: "2026-08-21 17:18",
+                trust: 24,
+                fps: 76,
+                confidence: "93.0%",
+                tier: "high",
+                verdict: "GAN Deepfake Identity",
+                metadata: "Account Age: 2 Mos • High Follower Ratio",
+                vision: "EfficientNet-B4 Eye Pupil & Hair Boundary Artifacts",
+                nlp: "Automated Generic Captions",
+                bot: "Scheduled Third-Party API Posting",
+                shap1: { label: "Account Age & Profile Longevity", val: "-14% Short History", width: 58, color: "amber" },
+                shap2: { label: "Avatar & Facial Image Forensics", val: "-48% GAN Synthetic", width: 96, color: "red" },
+                shap3: { label: "Circadian Rhythm Regularity", val: "-18% API Scheduled", width: 64, color: "amber" }
+            }
+        ];
+
+        let profileDatabase = [...initialProfileHistory];
+        let currentSelectedProfile = profileDatabase[0];
+        let activePlatformFilter = 'all';
+        let isRiskOnly = false;
+
+        // Charts
+        let timelineChart = null;
+        let platformDonutChart = null;
+        let riskVectorsChart = null;
+
+        // Load custom scans from localStorage if available
+        function loadStorageHistory() {
+            try {
+                const saved = localStorage.getItem("veriscan_scans_history");
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        profileDatabase = [...parsed, ...initialProfileHistory];
+                    }
+                }
+            } catch (e) {
+                console.warn("Storage history read error:", e);
+            }
+        }
+
+        // Render Profile List Cards
+        function renderProfileList() {
+            const container = document.getElementById("profileList");
+            const searchQuery = document.getElementById("profileSearchInput").value.trim().toLowerCase();
+            container.innerHTML = "";
+
+            const filtered = profileDatabase.filter(p => {
+                const matchPlatform = activePlatformFilter === 'all' || p.platform === activePlatformFilter;
+                const matchRisk = !isRiskOnly || (p.tier === 'high' || p.tier === 'med');
+                const matchSearch = searchQuery === '' || p.handle.toLowerCase().includes(searchQuery) || p.verdict.toLowerCase().includes(searchQuery);
+                return matchPlatform && matchRisk && matchSearch;
+            });
+
+            document.getElementById("registryCountLabel").textContent = `Showing ${filtered.length} of ${profileDatabase.length} audited profiles`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                        <i class="fas fa-magnifying-glass" style="font-size:24px; margin-bottom:8px; display:block;"></i>
+                        No audited profiles matching your filter criteria.
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const div = document.createElement("div");
+                div.className = `profile-card-item ${currentSelectedProfile.id === p.id ? 'selected' : ''}`;
+                div.onclick = () => selectProfile(p);
+
+                let platIcon = "fa-instagram";
+                let platClass = "instagram";
+                if (p.platform === "X") { platIcon = "fa-x-twitter"; platClass = "x"; }
+                else if (p.platform === "Facebook") { platIcon = "fa-facebook-f"; platClass = "facebook"; }
+                else if (p.platform === "LinkedIn") { platIcon = "fa-linkedin-in"; platClass = "linkedin"; }
+
+                div.innerHTML = `
+                    <div class="profile-info-left">
+                        <div class="platform-icon-bubble ${platClass}">
+                            <i class="fab ${platIcon}"></i>
+                        </div>
+                        <div class="profile-text-meta">
+                            <div class="profile-handle">${p.handle}</div>
+                            <div class="profile-date-platform">${p.platform} • ${p.time}</div>
+                        </div>
+                    </div>
+                    <div class="profile-right-meta">
+                        <span class="verdict-pill ${p.tier}">${p.verdict}</span>
+                        <div class="score-circle-mini ${p.tier}">${p.trust}</div>
+                        <i class="fas fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Select and Inspect Profile in Dossier
+        function selectProfile(p) {
+            currentSelectedProfile = p;
+
+            // Update Dossier Header
+            document.getElementById("dossierHandle").textContent = p.handle;
+            document.getElementById("dossierSub").textContent = `${p.platform} • Audited ${p.time} (${p.timestamp})`;
+            
+            const badge = document.getElementById("dossierVerdictBadge");
+            badge.className = `verdict-pill ${p.tier}`;
+            badge.textContent = p.verdict;
+
+            const icon = document.getElementById("dossierPlatformIcon");
+            const bubble = document.getElementById("dossierIconBubble");
+            if (p.platform === "Instagram") { icon.className = "fab fa-instagram"; bubble.style.color = "#e1306c"; }
+            else if (p.platform === "X") { icon.className = "fab fa-x-twitter"; bubble.style.color = document.body.classList.contains("light-mode") ? "#0f172a" : "#ffffff"; }
+            else if (p.platform === "Facebook") { icon.className = "fab fa-facebook-f"; bubble.style.color = "#1877f2"; }
+            else if (p.platform === "LinkedIn") { icon.className = "fab fa-linkedin-in"; bubble.style.color = "#0a66c2"; }
+
+            // Scores
+            const trustEl = document.getElementById("dossierTrustVal");
+            trustEl.textContent = `${p.trust}%`;
+            trustEl.style.color = p.tier === 'low' ? '#10b981' : (p.tier === 'med' ? '#f59e0b' : '#ef4444');
+
+            document.getElementById("dossierFpsVal").textContent = `${p.fps}%`;
+            document.getElementById("dossierConfVal").textContent = p.confidence;
+
+            // 4 Pillars
+            document.getElementById("dossierMetaVal").textContent = p.metadata;
+            document.getElementById("dossierVisionVal").textContent = p.vision;
+            document.getElementById("dossierNlpVal").textContent = p.nlp;
+            document.getElementById("dossierBotVal").textContent = p.bot;
+
+            // SHAP Bars
+            document.getElementById("dossierShapVal1").textContent = p.shap1.val;
+            document.getElementById("dossierShapBar1").style.width = p.shap1.width + "%";
+            document.getElementById("dossierShapBar1").className = `dossier-shap-fill ${p.shap1.color}`;
+
+            document.getElementById("dossierShapVal2").textContent = p.shap2.val;
+            document.getElementById("dossierShapBar2").style.width = p.shap2.width + "%";
+            document.getElementById("dossierShapBar2").className = `dossier-shap-fill ${p.shap2.color}`;
+
+            document.getElementById("dossierShapVal3").textContent = p.shap3.val;
+            document.getElementById("dossierShapBar3").style.width = p.shap3.width + "%";
+            document.getElementById("dossierShapBar3").className = `dossier-shap-fill ${p.shap3.color}`;
+
+            renderProfileList();
+        }
+
+        // Filter Actions
+        function filterByPlatform(plat, btn) {
+            activePlatformFilter = plat;
+            document.querySelectorAll(".platform-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            renderProfileList();
+        }
+
+        function toggleRiskOnly(btn) {
+            isRiskOnly = !isRiskOnly;
+            btn.classList.toggle("active", isRiskOnly);
+            renderProfileList();
+        }
+
+        function filterProfileHistory() {
+            renderProfileList();
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            const isLight = document.body.classList.contains("light-mode");
+            const gridColor = isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)";
+            const textColor = isLight ? "#64748b" : "#94a3b8";
+
+            // 1. Timeline Chart
+            const ctxTime = document.getElementById("timelineChart").getContext("2d");
+            timelineChart = new Chart(ctxTime, {
+                type: 'line',
+                data: {
+                    labels: ["Aug 20", "Aug 21", "Aug 22", "Aug 23", "Aug 24", "Aug 25 (Today)"],
+                    datasets: [
+                        {
+                            label: 'Avg Trust Score',
+                            data: [88, 82, 79, 91, 85, 87],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                            fill: true,
+                            tension: 0.35,
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10b981'
+                        },
+                        {
+                            label: 'Avg Risk Score (FPS)',
+                            data: [12, 18, 21, 9, 15, 13],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: textColor, font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 9 } } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 9 } }, min: 0, max: 100 }
+                    }
+                }
+            });
+
+            // 2. Platform Donut
+            const ctxDonut = document.getElementById("platformDonutChart").getContext("2d");
+            platformDonutChart = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ["Instagram", "X (Twitter)", "Facebook", "LinkedIn"],
+                    datasets: [{
+                        data: [40, 28, 18, 14],
+                        backgroundColor: ["#e1306c", "#00d2ff", "#1877f2", "#0a66c2"],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: textColor, font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+
+            // 3. Risk Vectors Bar Chart
+            const ctxRisk = document.getElementById("riskVectorsChart").getContext("2d");
+            riskVectorsChart = new Chart(ctxRisk, {
+                type: 'bar',
+                data: {
+                    labels: ["Bot Timing", "GAN Avatar", "NLP Scam", "Follower Skew"],
+                    datasets: [{
+                        label: 'Incidents in History',
+                        data: [34, 19, 28, 42],
+                        backgroundColor: ["#f59e0b", "#c084fc", "#ef4444", "#0284c7"],
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9 } } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        // Actions
+        function rescanProfileInMainApp() {
+            window.location.href = `VeriScan.html?handle=${encodeURIComponent(currentSelectedProfile.handle)}&platform=${encodeURIComponent(currentSelectedProfile.platform)}`;
+        }
+
+        function exportProfilePdf() {
+            window.location.href = `VeriScan.html?export=${encodeURIComponent(currentSelectedProfile.handle)}`;
+        }
+
+        function exportHistoryCsv() {
+            let csv = "Profile Handle,Platform,Scan Timestamp,Trust Score,Fake Probability (FPS),Verdict,Primary Red Flags\n";
+            profileDatabase.forEach(p => {
+                csv += `"${p.handle}","${p.platform}","${p.timestamp}","${p.trust}%","${p.fps}%","${p.verdict}","${p.metadata}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `VeriScan_Profile_Audit_History_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle("light-mode");
+            const isLight = document.body.classList.contains("light-mode");
+            localStorage.setItem("veriscan_theme", isLight ? "light" : "dark");
+            updateThemeUI(isLight);
+        }
+
+        function updateThemeUI(isLight) {
+            const themeIcon = document.getElementById("themeIcon");
+            const logo = document.getElementById("registryLogo");
+
+            if (isLight) {
+                themeIcon.className = "fas fa-sun";
+                logo.src = "veriscan-logo-light.png";
+            } else {
+                themeIcon.className = "fas fa-moon";
+                logo.src = "veriscan-logo-transparent.png";
+            }
+
+            if (timelineChart) {
+                timelineChart.destroy();
+                platformDonutChart.destroy();
+                riskVectorsChart.destroy();
+                initCharts();
+            }
+        }
+
+        // Init on load
+        window.addEventListener("DOMContentLoaded", () => {
+            loadStorageHistory();
+
+            const savedTheme = localStorage.getItem("veriscan_theme");
+            if (savedTheme === "light") {
+                document.body.classList.add("light-mode");
+                updateThemeUI(true);
+            } else {
+                updateThemeUI(false);
+            }
+
+            renderProfileList();
+            initCharts();
+            if (profileDatabase && profileDatabase.length > 0) {
+                selectProfile(profileDatabase[0]);
+            }
+        });
+    </script>
+</body>
+</html>
